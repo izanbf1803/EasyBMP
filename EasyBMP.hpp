@@ -12,9 +12,6 @@ namespace EasyBMP
     using std::uint8_t;
     using std::ofstream;
 
-    static const int BMP_FILE_HEADER_SIZE = 14;
-    static const int BMP_INFO_HEADER_SIZE = 40;
-
 
     class RGBColor 
     {

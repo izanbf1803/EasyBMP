@@ -1,3 +1,7 @@
+/*
+Original repository: https://github.com/izanbf1803/EasyBMP
+License: MIT
+*/
 #include <array>
 #include <cassert>
 #include <cstdint>

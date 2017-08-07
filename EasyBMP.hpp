@@ -24,7 +24,6 @@ namespace EasyBMP
         ~RGBColor() {};
         RGBColor(uint8_t _r, uint8_t _g, uint8_t _b);
         void SetColor(uint8_t _r, uint8_t _g, uint8_t _b);
-        void LoadDataTo3ByteBuffer(uint8_t* buffer);
 
         uint8_t r;
         uint8_t g;
@@ -41,13 +40,6 @@ namespace EasyBMP
         r = _r;
         g = _g;
         b = _b;
-    }
-
-    void RGBColor::LoadDataTo3ByteBuffer(uint8_t* buffer) 
-    {
-        buffer[0] = b;
-        buffer[1] = g;
-        buffer[2] = r;
     }
 
 
@@ -243,11 +235,7 @@ namespace EasyBMP
         for (int64_t y = height - 1; y >= 0; --y) {
             for (int64_t x = 0; x < width; ++x) {
                 // Also, it's written in (b,g,r) format...
-                buffer[y][x].LoadDataTo3ByteBuffer(colorBuffer);
-
-                for (int i = 0; i < 3; ++i) {
-                    outFile << (uint8_t)colorBuffer[i];
-                }
+                outFile << buffer[y][x].b << buffer[y][x].g << buffer[y][x].r;
             }
             // See above - BMP lines must be of lengths divisible by 4.
             if (extraBytes) {

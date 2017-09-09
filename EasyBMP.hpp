@@ -77,6 +77,7 @@ namespace EasyBMP
                 delete[] buffer[i];
             }
             delete[] buffer;
+            buffer = NULL;
         }
     }
 

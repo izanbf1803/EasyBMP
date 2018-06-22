@@ -101,26 +101,24 @@ int main()
   };
   vector< double > charges = {1024.0, 2048.0};
   // R, G, B [0, 255]
-  EasyBMP::RGBColor black(0, 0, 0);
-	// sizeX, sizeY, FileName, BackgroundColor
-	EasyBMP::Image img(512, 512, "sample.bmp", black);
+  EasyBMP::RGBColor black(0, 0, 0);  
+  // sizeX, sizeY, FileName, BackgroundColor
+  EasyBMP::Image img(512, 512, "sample.bmp", black);
 
-	for (int y = 0; y < 512; ++y) {
-		for (int x = 0; x < 512; ++x) {
+  for (int y = 0; y < 512; ++y) {
+    for (int x = 0; x < 512; ++x) {
       double intensity = 0.0;
-      for(int i = 0; i < 2; ++i) {
+      for (int i = 0; i < 2; ++i) {
         double dist = max(centers[i].distanceTo(point(x, y)), 0.001);
         intensity += charges[i] / (dist * dist);
       }
       int final_color = min(255, int(255. * intensity));
-			// PositionX, PisitionY, Color
-			img.SetPixel(x, y, EasyBMP::RGBColor(final_color, final_color, 0));
-		}
-	}
-
-	img.Write();
-
-	return 0;
+      // PositionX, PisitionY, Color
+      img.SetPixel(x, y, EasyBMP::RGBColor(final_color, final_color, 0));
+    }
+  }
+  img.Write();
+  return 0;
 }
 ```
 ### Result:

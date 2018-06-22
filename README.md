@@ -104,4 +104,4 @@ int main()
 ```
 ### Result:
 
-![Image of Yaktocat](https://raw.githubusercontent.com/izanbf1803/EasyBMP/master/sample.bmp)
+![Image of Yaktocat](sample.bmp)

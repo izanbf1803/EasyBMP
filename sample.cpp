@@ -22,11 +22,10 @@ int main()
     {192, 192}
   };
   vector< double > charges = {1024.0, 2048.0};
-	// sizeX, sizeY, FileName, BackgroundColor
+  // R, G, B [0, 255]
   EasyBMP::RGBColor black(0, 0, 0);
+	// sizeX, sizeY, FileName, BackgroundColor
 	EasyBMP::Image img(512, 512, "sample.bmp", black);
-
-  double diagonal_distance = point(0., 0.).distanceTo(point(512., 512.));
 
 	for (int y = 0; y < 512; ++y) {
 		for (int x = 0; x < 512; ++x) {

@@ -74,34 +74,53 @@ Defined as:
 EasyBMP::Image::SetPixel(int64_t x, int64_t y, RGBColor color);
 ```
 
-# Full example: A image of size 512x512 with yellow borders and random colors in the center:
+# Full example: A 512x512 image with two Metaballs
 ```cpp
 #include "EasyBMP.hpp"
 #include <iostream>
-#include <random>
-
+#include <vector>
+#include <cmath>
 using namespace std;
+
+struct point
+{
+  double x, y;
+  point(double _x, double _y) : x(_x), y(_y) { }
+  double distanceTo(const point& o) {
+    double dx = (x - o.x);
+    double dy = (y - o.y);
+    return sqrt(dx * dx + dy * dy);
+  }
+};
 
 int main()
 {
-	default_random_engine gen;
-	uniform_int_distribution<int> dist(0, 255);
+  vector< point > centers = {
+    {256, 256},
+    {192, 192}
+  };
+  vector< double > charges = {1024.0, 2048.0};
+  // R, G, B [0, 255]
+  EasyBMP::RGBColor black(0, 0, 0);  
+  // sizeX, sizeY, FileName, BackgroundColor
+  EasyBMP::Image img(512, 512, "sample.bmp", black);
 
-	// sizeX, sizeY, FileName, BackgroundColor
-	EasyBMP::Image img(512, 512, "sample.bmp", EasyBMP::RGBColor(255, 255, 0));
-
-	for (int y = 30; y <= 512 - 30; ++y) {
-		for (int x = 30; x <= 512 - 30; ++x) {
-			// PositionX, PisitionY, Color
-			img.SetPixel(x, y, EasyBMP::RGBColor(dist(gen), dist(gen), dist(gen)));
-		}
-	}
-
-	img.Write();
-
-	return 0;
+  for (int y = 0; y < 512; ++y) {
+    for (int x = 0; x < 512; ++x) {
+      double intensity = 0.0;
+      for (int i = 0; i < 2; ++i) {
+        double dist = max(centers[i].distanceTo(point(x, y)), 1.0);
+        intensity += charges[i] / (dist * dist);
+      }
+      int final_color = min(255, int(255. * intensity));
+      // PositionX, PisitionY, Color
+      img.SetPixel(x, y, EasyBMP::RGBColor(final_color, final_color, 0));
+    }
+  }
+  img.Write();
+  return 0;
 }
 ```
 ### Result:
 
-![Image of Yaktocat](https://raw.githubusercontent.com/izanbf1803/EasyBMP/master/sample.bmp)
+![Image of Yaktocat](sample.bmp)

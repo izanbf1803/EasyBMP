@@ -31,7 +31,7 @@ int main()
     for (int x = 0; x < 512; ++x) {
       double intensity = 0.0;
       for (int i = 0; i < 2; ++i) {
-        double dist = max(centers[i].distanceTo(point(x, y)), 0.001);
+        double dist = max(centers[i].distanceTo(point(x, y)), 1.0);
         intensity += charges[i] / (dist * dist);
       }
       int final_color = min(255, int(255. * intensity));

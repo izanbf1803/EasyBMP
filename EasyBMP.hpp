@@ -1,3 +1,6 @@
+#ifndef EasyBMP_H_
+#define EasyBMP_H_
+
 /*
 Original repository: https://github.com/izanbf1803/EasyBMP
 License: MIT
@@ -56,6 +59,8 @@ namespace EasyBMP
         void SetFileName(const string& _outFileName);
         void Write(const string& _outFileName);
         void Write();
+        inline int64_t w() const { return width; }
+        inline int64_t h() const { return height; }
 
     private:
         void Init(int64_t _width, int64_t _height);
@@ -249,3 +254,5 @@ namespace EasyBMP
         outFile.close();
     }
 }
+
+#endif

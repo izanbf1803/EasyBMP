@@ -55,7 +55,9 @@ namespace EasyBMP
         Image(int64_t _width, int64_t _height, const string& _outFileName);
         Image(int64_t _width, int64_t _height, const RGBColor& _backgroundColor);
         Image(int64_t _width, int64_t _height, const string& _outFileName, const RGBColor& _backgroundColor);
-        void SetPixel(int64_t x, int64_t y, const RGBColor& color);
+        void SetPixel(int64_t x, int64_t y, const RGBColor& color, bool ignore_err);
+        void DrawLine(int64_t x0, int64_t y0, int64_t x1, int64_t y1, const RGBColor& color);
+        void DrawCircle(int64_t x0, int64_t y0, int64_t r, const RGBColor& color, bool fill);
         void SetFileName(const string& _outFileName);
         void Write(const string& _outFileName);
         void Write();
@@ -65,6 +67,8 @@ namespace EasyBMP
     private:
         void Init(int64_t _width, int64_t _height);
         void Setup();
+        void DrawLineLow(int64_t x0, int64_t y0, int64_t x1, int64_t y1, const RGBColor& color);
+        void DrawLineHigh(int64_t x0, int64_t y0, int64_t x1, int64_t y1, const RGBColor& color);
 
         int64_t width;
         int64_t height;
@@ -144,10 +148,124 @@ namespace EasyBMP
         }
     }
 
-    void Image::SetPixel(int64_t x, int64_t y, const RGBColor& color)
+    void Image::SetPixel(int64_t x, int64_t y, const RGBColor& color, bool ignore_err=false)
     {
+        if (ignore_err and not(x >= 0 and y >= 0 and x < width and y < height)) return;
         assert(x >= 0 and y >= 0 and x < width and y < height);
         buffer[y][x] = color;
+    }
+
+    // https://en.wikipedia.org/wiki/Bresenham%27s_line_algorithm
+    void Image::DrawLine(int64_t x0, int64_t y0, int64_t x1, int64_t y1, const RGBColor& color)
+    {   
+        if (abs(y1 - y0) < abs(x1 - x0)) {
+            if (x0 > x1) {
+                DrawLineLow(x1, y1, x0, y0, color);
+            }
+            else {
+                DrawLineLow(x0, y0, x1, y1, color);
+            }
+        }
+        else {
+            if (y0 > y1) {
+                DrawLineHigh(x1, y1, x0, y0, color);
+            }
+            else {
+                DrawLineHigh(x0, y0, x1, y1, color);
+            }
+        }
+    }
+
+    void Image::DrawLineLow(int64_t x0, int64_t y0, int64_t x1, int64_t y1, const RGBColor& color)
+    {
+        int64_t dx = x1 - x0;
+        int64_t dy = y1 - y0;
+        int64_t yi = 1;
+        if (dy < 0) {
+            yi = -1;
+            dy = -dy;
+        }
+        int64_t D = (dy << 1) - dx;
+        int64_t y = y0;
+        for (int64_t x = x0; x <= x1; ++x) {
+            SetPixel(x, y, color, true);
+            if (D > 0) {
+                y += yi;
+                D -= (dx << 1);
+            }
+            D += (dy << 1);
+        }
+    }
+
+    void Image::DrawLineHigh(int64_t x0, int64_t y0, int64_t x1, int64_t y1, const RGBColor& color)
+    {
+        int64_t dx = x1 - x0;
+        int64_t dy = y1 - y0;
+        int64_t xi = 1;
+        if (dx < 0) {
+            xi = -1;
+            dx = -dx;
+        }
+        int64_t D = (dx << 1) - dy;
+        int64_t x = x0;
+        for (int64_t y = y0; y <= y1; ++y) {
+            SetPixel(x, y, color, true);
+            if (D > 0) {
+                x += xi;
+                D -= (dy << 1);
+            }
+            D += (dx << 1);
+        }
+    }
+
+    void Image::DrawCircle(int64_t x0, int64_t y0, int64_t r, const RGBColor& color, bool fill = false)
+    {   
+        assert(x0 >= 0 and y0 >= 0 and x0 < width and y0 < height);
+    
+        if (fill) {
+            int64_t sq_r = r*r;
+            for (int64_t dx = -r; dx <= r; ++dx) {
+                for (int64_t dy = -r; dy <= r; ++dy) {
+                    int64_t sq_dist = dx*dx + dy*dy;
+                    if (sq_dist <= sq_r) {
+                        int64_t x = x0 + dx;
+                        int64_t y = y0 + dy;
+                        SetPixel(x, y, color, true);
+                    }
+                }
+            }
+        }
+        else {
+            // https://en.wikipedia.org/wiki/Midpoint_circle_algorithm
+            int64_t x = r - 1;
+            int64_t y = 0;
+            int64_t dx = 1;
+            int64_t dy = 1;
+            int64_t err = dx - (r << 1);
+
+            while (x >= y) {
+                SetPixel(x0 + x, y0 + y, color, true);
+                SetPixel(x0 + y, y0 + x, color, true);
+                SetPixel(x0 - y, y0 + x, color, true);
+                SetPixel(x0 - x, y0 + y, color, true);
+                SetPixel(x0 - x, y0 - y, color, true);
+                SetPixel(x0 - y, y0 - x, color, true);
+                SetPixel(x0 + y, y0 - x, color, true);
+                SetPixel(x0 + x, y0 - y, color, true);
+
+                if (err <= 0) {
+                    y++;
+                    err += dy;
+                    dy += 2;
+                }
+                
+                if (err > 0) {
+                    x--;
+                    dx += 2;
+                    err += dx - (r << 1);
+                }
+            }
+        }
     }
 
     void Image::SetFileName(const string& _outFileName) 

@@ -56,6 +56,7 @@ namespace EasyBMP
         Image(int64_t _width, int64_t _height, const RGBColor& _backgroundColor);
         Image(int64_t _width, int64_t _height, const string& _outFileName, const RGBColor& _backgroundColor);
         void SetPixel(int64_t x, int64_t y, const RGBColor& color, bool ignore_err);
+        const RGBColor& GetPixel(int64_t x, int64_t y, bool ignore_err);
         void DrawLine(int64_t x0, int64_t y0, int64_t x1, int64_t y1, const RGBColor& color);
         void DrawCircle(int64_t x0, int64_t y0, int64_t r, const RGBColor& color, bool fill);
         void SetFileName(const string& _outFileName);
@@ -150,9 +151,16 @@ namespace EasyBMP
 
     void Image::SetPixel(int64_t x, int64_t y, const RGBColor& color, bool ignore_err=false)
     {
-        if (ignore_err and not(x >= 0 and y >= 0 and x < width and y < height)) return;
-        assert(x >= 0 and y >= 0 and x < width and y < height);
+        if (ignore_err and not(x >= 0 and y >= 0 and x < width and y < height))
+            throw std::out_of_range("pixel coordinate is out of range");
         buffer[y][x] = color;
+    }
+
+    const RGBColor& Image::GetPixel(int64_t x, int64_t y, bool ignore_err=false)
+    {
+        if (ignore_err and not(x >= 0 and y >= 0 and x < width and y < height))
+            throw std::out_of_range("pixel coordinate is out of range");
+        return buffer[y][x];
     }
 
     // https://en.wikipedia.org/wiki/Bresenham%27s_line_algorithm

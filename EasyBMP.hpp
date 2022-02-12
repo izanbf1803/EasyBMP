@@ -18,6 +18,7 @@ namespace EasyBMP
     using std::uint32_t;
     using std::uint8_t;
     using std::ofstream;
+    using std::ifstream;
     using std::stringstream;
 
 
@@ -52,6 +53,8 @@ namespace EasyBMP
     public:
         ~Image();
         Image() { width = height = 0; }; // Don't use default constructor, just for variable definition
+        Image(const string& _inFileName);
+        Image(const string& _inFileName, const string& _outFileName);
         Image(int64_t _width, int64_t _height);
         Image(int64_t _width, int64_t _height, const string& _outFileName);
         Image(int64_t _width, int64_t _height, const RGBColor& _backgroundColor);
@@ -72,8 +75,10 @@ namespace EasyBMP
     private:
         void Init(int64_t _width, int64_t _height);
         void Setup();
+        void FillBG();
         void DrawLineLow(int64_t x0, int64_t y0, int64_t x1, int64_t y1, const RGBColor& color);
         void DrawLineHigh(int64_t x0, int64_t y0, int64_t x1, int64_t y1, const RGBColor& color);
+        void OpenSetup(const string& _inFileName);
 
         int64_t width;
         int64_t height;
@@ -95,10 +100,20 @@ namespace EasyBMP
         }
     }
 
+    Image::Image(const string& _inFileName) {
+        OpenSetup(_inFileName);
+    }
+
+    Image::Image(const string& _inFileName, const string& _outFileName) {
+        OpenSetup(_inFileName);
+        SetFileName(_outFileName);
+    }
+
     Image::Image(int64_t _width, int64_t _height) 
     {
         Init(_width, _height);
         Setup();
+        FillBG();
     }
 
     Image::Image(int64_t _width, int64_t _height, const string& _outFileName)
@@ -106,6 +121,7 @@ namespace EasyBMP
         Init(_width, _height);
         SetFileName(_outFileName);
         Setup();
+        FillBG();
     }
 
     Image::Image(int64_t _width, int64_t _height, const RGBColor& _backgroundColor) 
@@ -113,6 +129,7 @@ namespace EasyBMP
         Init(_width, _height);
         backgroundColor = _backgroundColor;
         Setup();
+        FillBG();
     }
 
     Image::Image(int64_t _width, int64_t _height, const string& _outFileName, const RGBColor& _backgroundColor) 
@@ -121,6 +138,7 @@ namespace EasyBMP
         SetFileName(_outFileName);
         backgroundColor = _backgroundColor;
         Setup();
+        FillBG();
     }
 
     // Load constant values
@@ -142,16 +160,20 @@ namespace EasyBMP
             buffer = new RGBColor*[height];
             for (int64_t y = 0; y < height; ++y) {
                 buffer[y] = new RGBColor[width];
-                // Fill with background color:
-                for (int64_t x = 0; x < width; ++x) {
-                    buffer[y][x] = backgroundColor;
-                }
             }
         }
         catch (std::bad_alloc& ba) {
             std::stringstream ss;
             ss << "EasyBMP ERROR: bad_alloc error (Can't create image buffer) -> " << ba.what();
             throw std::runtime_error(ss.str());
+        }
+    }
+
+    void Image::FillBG() {
+        for (int64_t y = 0; y < height; ++y) {
+            for (int64_t x = 0; x < width; ++x) {
+                buffer[y][x] = backgroundColor;
+            }
         }
     }
 
@@ -371,8 +393,6 @@ namespace EasyBMP
         // Headers done, now write the data...
         //
 
-        uint8_t colorBuffer[3];
-
         // BMP image format is written from bottom to top...
         for (int64_t y = height - 1; y >= 0; --y) {
             for (int64_t x = 0; x < width; ++x) {
@@ -386,8 +406,67 @@ namespace EasyBMP
                 }
             }
         }
-
+        
         outFile.close();
+    }
+
+    // Reverse of Write()
+    void Image::OpenSetup(const string& _inFileName) {
+        ifstream inFile;
+        inFile.open(_inFileName, ifstream::binary);
+
+        if(!inFile.is_open()) {
+            throw std::runtime_error("EasyBMP ERROR: Can't open file to read data.");
+        }
+
+        // Get image dimensions
+        uint8_t imgInfo[54];
+        inFile.read((char*)imgInfo, 54);
+        width  = *(uint32_t*)&imgInfo[18];
+        height = *(uint32_t*)&imgInfo[22];
+
+        uint16_t bytesPerPixel = *(uint16_t*)&imgInfo[28] / 8;
+        uint32_t compression = *(uint32_t*)&imgInfo[30];
+
+        if(compression != 0) {
+            throw std::runtime_error("EasyBMP ERROR: Bitmap compression not supported.");
+        }
+
+        if(bytesPerPixel != 3) {
+            throw std::runtime_error("EasyBMP ERROR: Bytes per pixel of bitmap must be 3.");
+        }
+            
+
+        // Get pixel data offset
+        uint32_t offset = *(uint32_t*)&imgInfo[10];
+
+        std::cout << "Offset: " << offset << "\n";
+
+        // Get row padding
+        int extraBytes = 4 - ((width * 3) % 4);
+        if (extraBytes == 4) extraBytes = 0;
+
+        // Create image buffer
+        Setup();
+
+        // Ignore pixel data offset
+        inFile.ignore(offset-54);
+
+        // Put image pixels into buffer
+        for(int64_t y = height - 1; y >= 0; --y) {
+            for(int64_t x = 0; x < width; ++x) {
+                uint8_t b = inFile.get();
+                uint8_t g = inFile.get();
+                uint8_t r = inFile.get();
+                RGBColor pixelColor(r, g, b);
+                buffer[y][x] = pixelColor;
+            }
+            if (extraBytes) { // BMP padding
+                inFile.ignore(extraBytes);
+            }
+        }
+
+        inFile.close();
     }
 }
 

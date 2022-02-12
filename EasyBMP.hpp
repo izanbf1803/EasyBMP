@@ -440,8 +440,6 @@ namespace EasyBMP
         // Get pixel data offset
         uint32_t offset = *(uint32_t*)&imgInfo[10];
 
-        std::cout << "Offset: " << offset << "\n";
-
         // Get row padding
         int extraBytes = 4 - ((width * 3) % 4);
         if (extraBytes == 4) extraBytes = 0;

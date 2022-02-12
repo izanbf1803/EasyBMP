@@ -6,9 +6,9 @@ Original repository: https://github.com/izanbf1803/EasyBMP
 License: MIT
 */
 #include <array>
-#include <cassert>
 #include <cstdint>
 #include <fstream>
+#include <sstream>
 #include <iostream>
 
 namespace EasyBMP 
@@ -18,6 +18,7 @@ namespace EasyBMP
     using std::uint32_t;
     using std::uint8_t;
     using std::ofstream;
+    using std::stringstream;
 
 
     class RGBColor 
@@ -56,7 +57,7 @@ namespace EasyBMP
         Image(int64_t _width, int64_t _height, const RGBColor& _backgroundColor);
         Image(int64_t _width, int64_t _height, const string& _outFileName, const RGBColor& _backgroundColor);
         void SetPixel(int64_t x, int64_t y, const RGBColor& color, bool ignore_err);
-        const RGBColor& GetPixel(int64_t x, int64_t y, bool ignore_err);
+        const RGBColor& GetPixel(int64_t x, int64_t y);
         void DrawLine(int64_t x0, int64_t y0, int64_t x1, int64_t y1, const RGBColor& color);
         void DrawCircle(int64_t x0, int64_t y0, int64_t r, const RGBColor& color, bool fill);
         void SetFileName(const string& _outFileName);
@@ -64,6 +65,9 @@ namespace EasyBMP
         void Write();
         inline int64_t w() const { return width; }
         inline int64_t h() const { return height; }
+        inline bool isValidCoordinate(int64_t x, int64_t y) {
+            return x >= 0 and y >= 0 and x < width and y < height;
+        }
 
     private:
         void Init(int64_t _width, int64_t _height);
@@ -122,7 +126,8 @@ namespace EasyBMP
     // Load constant values
     void Image::Init(int64_t _width, int64_t _height)
     {
-        assert(_width > 0 and _height > 0);
+        if(_width <= 0 || _height <= 0)
+            throw std::invalid_argument("EasyBMP ERROR: Image width and heigth must be greater than zero");
         width = _width;
         height = _height;
         buffer = NULL;
@@ -144,22 +149,26 @@ namespace EasyBMP
             }
         }
         catch (std::bad_alloc& ba) {
-            std::cerr << "EasyBMP ERROR: bad_alloc error (Can't create image buffer) -> " << ba.what() << std::endl;
-            assert(false);
+            std::stringstream ss;
+            ss << "EasyBMP ERROR: bad_alloc error (Can't create image buffer) -> " << ba.what();
+            throw std::runtime_error(ss.str());
         }
     }
 
     void Image::SetPixel(int64_t x, int64_t y, const RGBColor& color, bool ignore_err=false)
     {
-        if (ignore_err and not(x >= 0 and y >= 0 and x < width and y < height))
-            throw std::out_of_range("pixel coordinate is out of range");
-        buffer[y][x] = color;
+        if (!isValidCoordinate(x, y)) {
+            if(!ignore_err)
+                throw std::out_of_range("EasyBMP ERROR: pixel coordinate is out of range.");
+        } else {
+            buffer[y][x] = color;
+        }
     }
 
-    const RGBColor& Image::GetPixel(int64_t x, int64_t y, bool ignore_err=false)
+    const RGBColor& Image::GetPixel(int64_t x, int64_t y)
     {
-        if (ignore_err and not(x >= 0 and y >= 0 and x < width and y < height))
-            throw std::out_of_range("pixel coordinate is out of range");
+        if (!isValidCoordinate(x, y))
+            throw std::out_of_range("EasyBMP ERROR: pixel coordinate is out of range.");
         return buffer[y][x];
     }
 
@@ -227,8 +236,9 @@ namespace EasyBMP
     }
 
     void Image::DrawCircle(int64_t x0, int64_t y0, int64_t r, const RGBColor& color, bool fill = false)
-    {   
-        assert(x0 >= 0 and y0 >= 0 and x0 < width and y0 < height);
+    {
+        if(x0 < 0 and y0 < 0 and x0 >= width and y0 >= height)
+            throw std::out_of_range("EasyBMP ERROR: circle center coordinate is out of range.");
     
         if (fill) {
             int64_t sq_r = r*r;
@@ -278,7 +288,8 @@ namespace EasyBMP
 
     void Image::SetFileName(const string& _outFileName) 
     {
-        assert(_outFileName.size() > 0);
+        if(_outFileName.size() == 0)
+            throw std::out_of_range("EasyBMP ERROR: File name must contain at least one character.");
         outFileName = _outFileName;
     }
 
@@ -294,8 +305,7 @@ namespace EasyBMP
 
         outFile.open(outFileName, ofstream::binary);
         if (not outFile.is_open()) {
-            std::cerr << "EasyBMP ERROR: Can't open file to write data." << std::endl;
-            assert(false);
+            throw std::runtime_error("EasyBMP ERROR: Can't open file to write data.");
         }
 
         unsigned int headers[13];

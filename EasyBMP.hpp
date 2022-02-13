@@ -60,7 +60,7 @@ namespace EasyBMP
         Image(int64_t _width, int64_t _height, const RGBColor& _backgroundColor);
         Image(int64_t _width, int64_t _height, const string& _outFileName, const RGBColor& _backgroundColor);
         void SetPixel(int64_t x, int64_t y, const RGBColor& color, bool ignore_err);
-        const RGBColor& GetPixel(int64_t x, int64_t y);
+        const RGBColor& GetPixel(int64_t x, int64_t y) const;
         void DrawLine(int64_t x0, int64_t y0, int64_t x1, int64_t y1, const RGBColor& color);
         void DrawCircle(int64_t x0, int64_t y0, int64_t r, const RGBColor& color, bool fill);
         void SetFileName(const string& _outFileName);
@@ -68,7 +68,7 @@ namespace EasyBMP
         void Write();
         inline int64_t w() const { return width; }
         inline int64_t h() const { return height; }
-        inline bool isValidCoordinate(int64_t x, int64_t y) {
+        inline bool isValidCoordinate(int64_t x, int64_t y) const {
             return x >= 0 and y >= 0 and x < width and y < height;
         }
 
@@ -187,7 +187,7 @@ namespace EasyBMP
         }
     }
 
-    const RGBColor& Image::GetPixel(int64_t x, int64_t y)
+    const RGBColor& Image::GetPixel(int64_t x, int64_t y) const
     {
         if (!isValidCoordinate(x, y))
             throw std::out_of_range("EasyBMP ERROR: pixel coordinate is out of range.");

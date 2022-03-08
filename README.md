@@ -44,7 +44,7 @@ uint8_t yellow1_green = yellow1.g;
 ### `EasyBMP::Image`
 --------------------
 
-You have some constructors to create an instance of an `EasyBMP::Image`:
+You have some constructors to create an instance of an `EasyBMP::Image` from scratch:
 
 ```cpp
 EasyBMP::Image(int64_t width, int64_t height);
@@ -62,6 +62,23 @@ on a file "sample.bmp", and the background will be yellow.
 EasyBMP::Image img(512, 512, "sample.bmp", EasyBMP::RGBColor(255, 255, 0));
 ```
 
+And some others to create an instance of an `EasyBMP::Image` from an already existing bitmap:
+
+```cpp
+EasyBMP::Image(const string& _inFileName);
+EasyBMP::Image(const string& _inFileName, const string& _outFileName);
+```
+
+For example:
+
+```cpp
+/*
+This will create an image "img" by loading "input.bmp".
+"img" will be written to a new file named "output.bmp".
+*/
+EasyBMP::Image img("input.bmp", "output.bmp");
+```
+
 To modify a single pixel, you can use `EasyBMP::Image::SetPixel`:
 
 ```cpp
@@ -72,6 +89,18 @@ Defined as:
 
 ```cpp
 EasyBMP::Image::SetPixel(int64_t x, int64_t y, RGBColor color);
+```
+
+And to get a pixel value, `EasyBMP::Image::GetPixel`:
+
+```cpp
+img.GetPixel(x, y);
+```
+
+Defined as:
+
+```cpp
+const RGBColor& EasyBMP::Image::GetPixel(int64_t x, int64_t y) const;
 ```
 
 # Full example: A 512x512 image with two Metaballs
